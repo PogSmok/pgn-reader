@@ -1,3 +1,4 @@
+/*
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -199,3 +200,42 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+*/
+
+#include<stdbool.h>
+#include<stdint.h>
+#include<limits.h>
+#include"./board.h"
+
+bool is_board_null(Board board) {
+   return !(board.white[KING_INDEX] | board.black[KING_INDEX]);
+}
+
+void printBoard(Board board) {
+   uint64_t i = (BITFILE_A & BITRANK_8) >> 1;
+   uint8_t rank = 8, j, k;
+   while(rank != 0) {
+      printf("%i | ", rank--);
+      //for each square in rank
+      for(j = 0; j < 8; j++) {
+         i <<= 1;
+         if(i == 0) i = 1;
+
+         //find the piece placed there
+         for(k = 0; k < 12; k++){
+            if(k >= 6 && board.black[k-6] & i) {
+               printf(" %c ", PIECE_CHARS[k]);
+               break;
+            }
+            else if(k < 6 && board.white[k] & i) {
+               printf(" %c ", PIECE_CHARS[k]);
+               break;
+            }
+         }
+         if(k == 12) printf(" 0 ");
+      }
+      printf("\n");
+      i >>= 16;
+   }
+   printf("  -------------------------\n     a  b  c  d  e  f  g  h\n");
+}

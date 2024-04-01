@@ -1,3 +1,4 @@
+/*
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -199,3 +200,282 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+*/
+
+#include<stdio.h>
+#include<stdint.h>
+#include<stdbool.h>
+#include<stdlib.h>
+#include<string.h>
+#include"./bitmove.c"
+
+Board positions[MAX_MOVES];
+bool turn;
+int commentsPlacement[MAX_COMMENT_COUNT], variantions[MAX_VARIANTION_COUNT*2], lineIdx[MAX_MOVES], preVariationBoardIndx, varationsIndex, moveLen;
+char comments[MAX_COMMENT_COUNT][MAX_COMMENT_LENGTH], rawMoves[MAX_MOVES][MAX_ALGEBRAIC_LENGTH], tagContent[TAG_COUNT][MAX_TAG_VALUE_LENGTH], pgnContent[MAX_PGN_LENGTH], *path;
+
+void findOrigin(char org[2], char dest[2], uint8_t pieceIndex, Board board) {
+	
+}
+
+//Extract unedited content of the file to pgnContent
+void readFile() {
+   FILE *fptr;
+   int c, i = 0;
+   fptr = fopen(path, "r");
+
+   if(fptr != NULL) 
+      while((c = fgetc(fptr)) != EOF && i < MAX_PGN_LENGTH) pgnContent[i++] = c;
+   else exit(printf("The file \"%s\" could not be opened, verify the path.\n", path));
+   fclose(fptr); 
+}
+
+//Returns pointer to the beginning of the moves in the file 
+char* extractTags() {
+   char  *head, *i = pgnContent, *tag; 
+   while(*i != '\0') {
+      if(*i == '1') return i;
+      if(*i == '[') {
+         head = i+1;
+         while(*(++i) != ' ');
+         tag = memset(tag, 0, MAX_TAG_VALUE_LENGTH);
+         strncpy(tag, head, i-head);
+         int tagIndex;
+         for(tagIndex = 0; tagIndex < TAG_COUNT; tagIndex++) if(!strcmp(PGN_TAGS[tagIndex], tag)) break;
+         head = ++i+1;
+         while(*(++i) != '"');
+         tag = memset(tag, 0, MAX_TAG_VALUE_LENGTH);
+         tag = strncpy(tag, head, i-head);
+         if(tagIndex < TAG_COUNT) {
+            int j = 0;
+            head = tag;
+            while(*head != '\0' && j < MAX_TAG_VALUE_LENGTH) tagContent[tagIndex][j++] = *(head++);
+         }
+         while(*(++i) != '\n');
+      }
+      *i++;
+   }
+   exit(printf("Content of the file \"%s\" does not have any moves.\n", path));
+}
+
+void extractMoves(char* moves) {
+   commentsPlacement[0] = -1;
+   variantions[0] = -1;
+	char* i, *commentBegin, move[MAX_ALGEBRAIC_LENGTH] = {};
+   bool comment = false;
+	int isMove = 0, index = 0, rawMovesIndex = 0, commentsIndex = 0, variationsIndex = 0;
+	for(i = moves; *i != '\0'; i++) {
+      //Handle and save comments
+      if(*i == '{') {
+         comment = true;
+         commentsPlacement[commentsIndex] = rawMovesIndex;
+         commentBegin = i+2;
+      }  if(comment) {
+         if(*i == '}') {
+            comment = false;
+            strncpy(comments[commentsIndex++], commentBegin, i-commentBegin-1);
+         }
+         isMove = 0;
+         continue;
+      }
+
+      //Handle and save variations
+      if(*i == '(' || *i == ')'){
+         variantions[variationsIndex++] = rawMovesIndex;
+			isMove = 0;
+			continue;
+		}
+
+      if(*i == '.') isMove = (*(i-1) == '.' ? 2 : 3);
+		else if(isMove) {
+         if(*i != ' ') {
+            move[index++] = *i;
+            continue;
+         }
+         isMove--;
+         if(move[0] == 0) continue;
+         for(index = 0; move[index] != 0; index++) {
+            rawMoves[rawMovesIndex][index] = move[index];
+         }
+         rawMovesIndex++;
+         index = 0;
+         //extract move
+         memset(move, 0, MAX_ALGEBRAIC_LENGTH);
+         continue;
+      }
+	}
+   moveLen = rawMovesIndex;
+}
+
+void formatMoves(char* moves, int curMove) {
+   //Checks if a line should be printed
+   bool shouldPrint(int from, int* cur) {
+      return from < ++*cur;
+   }
+
+   bool doesExceedLimit(int from, int cur) {
+      return cur-from >= AMOUNT_OF_PRINTED_LINES;
+   }
+
+   int rawMovesIndex = 0, commentsIndex = 0, variationsDiff = 0, cur = 0, from = lineIdx[curMove] > 10 ? lineIdx[curMove] - 10 : 0;
+   varationsIndex = 0;
+
+   while(rawMoves[rawMovesIndex][0] != 0) {
+      bool moveBreakin = false;
+      while(commentsPlacement[commentsIndex] == rawMovesIndex) {
+         if(shouldPrint(from, &cur)) printf("\n#    %s", comments[commentsIndex]);
+         if(doesExceedLimit(from, cur)) return;
+         commentsIndex++;
+         moveBreakin = true;
+      }
+
+      while(variantions[varationsIndex] == rawMovesIndex) {
+         int j = rawMovesIndex-variationsDiff;
+         if(!(j & 1)) {
+            if(shouldPrint(from, &cur)) {
+               if(rawMovesIndex == curMove) {
+                  printf("\n#    [[[[%i... %s]]]]", (j>>1), rawMoves[rawMovesIndex]);
+                  turn = true;
+               } else printf("\n#    %i... %s", (j>>1), rawMoves[rawMovesIndex]);
+            } 
+            if(doesExceedLimit(from, cur)) return;
+         } else {
+            if(shouldPrint(from, &cur)) {
+               if(rawMovesIndex == curMove) {
+                  printf("\n#    [[[[%i. %s]]]]", (j>>1)+1, rawMoves[rawMovesIndex]);
+                  turn = false;
+               } else printf("\n#    %i. %s", (j>>1)+1, rawMoves[rawMovesIndex]);
+            }
+            if(doesExceedLimit(from, cur)) return;
+         }
+         lineIdx[rawMovesIndex] = cur;
+         rawMovesIndex++, varationsIndex++;
+         while(rawMovesIndex <= variantions[varationsIndex]) {
+            if(!(rawMovesIndex & 1)) {
+               cur--;
+               if(shouldPrint(from, &cur)) {
+                  if(rawMovesIndex == curMove) {
+                     printf(" [[[[%s]]]]", rawMoves[rawMovesIndex]);
+                     turn = true;
+                  } else printf(" %s", rawMoves[rawMovesIndex]);
+               }
+            } else {
+               if(shouldPrint(from, &cur)) {
+                  if(rawMovesIndex == curMove) {
+                     printf("\n#    [[[[%i. %s]]]]", (j>>1)+1, rawMoves[rawMovesIndex]);
+                     turn = false;
+                  } else printf("\n#    %i. %s", (j>>1)+1, rawMoves[rawMovesIndex]);
+               }
+               if(doesExceedLimit(from, cur)) return;
+            }
+            lineIdx[rawMovesIndex] = cur;
+            rawMovesIndex++, variationsDiff++, j++;
+         }
+         variationsDiff++, varationsIndex++;
+         if(rawMovesIndex <= curMove) preVariationBoardIndx = varationsIndex-2;
+      }
+
+      if(rawMovesIndex & 1) {
+         if(!moveBreakin) {
+            cur--;
+            if(shouldPrint(from, &cur)) {
+               if(rawMovesIndex == curMove) {
+                  printf(" [[[[%s]]]]", rawMoves[rawMovesIndex]);
+                  turn = true;
+                } else printf(" %s", rawMoves[rawMovesIndex]);
+            }
+         } else {
+            if(shouldPrint(from, &cur)){
+                  if(rawMovesIndex == curMove) {
+                     printf("\n[[[[%i... %s]]]]", (rawMovesIndex-variationsDiff+1>>1), rawMoves[rawMovesIndex]);
+                     turn = true;
+                  } else printf("\n%i... %s", (rawMovesIndex-variationsDiff+1>>1), rawMoves[rawMovesIndex]);
+               }
+            if(doesExceedLimit(from, cur)) return;
+         }
+      } else {
+         if(shouldPrint(from, &cur)) {
+            if(rawMovesIndex == curMove) {
+               printf("\n[[[[%i. %s]]]]", (rawMovesIndex-variationsDiff+1>>1)+1, rawMoves[rawMovesIndex]);
+               turn = false;
+            } else printf("\n%i. %s", (rawMovesIndex-variationsDiff+1>>1)+1, rawMoves[rawMovesIndex]);
+         }
+         if(doesExceedLimit(from, cur)) return;
+      }
+      lineIdx[rawMovesIndex] = cur;
+      rawMovesIndex++;
+   }
+}
+
+void printTags() {
+   if(tagContent[11][0]) printf("%s\n", tagContent[11]);
+   if(tagContent[15][0]) {
+      printf("%s", tagContent[15]);
+      tagContent[16][0] ? printf(" Round: %s\n", tagContent[16]) : printf("\n");
+   }
+
+   if(tagContent[0][0]) {
+      if(tagContent[2][0]) printf("%s ", tagContent[2]);
+      printf("%s", tagContent[0]);
+      if(tagContent[1][0]) printf(" (%s)", tagContent[1]);
+   }
+   printf(" vs ");
+   if(tagContent[0][5]) {
+      if(tagContent[7][0]) printf("%s ", tagContent[7]);
+      printf("%s", tagContent[5]);
+      if(tagContent[6][0]) printf(" (%s)", tagContent[6]);
+   }
+   printf("\n");
+   if(tagContent[13][0]) {
+      if(!strcmp("1-0", tagContent[12])) printf("White won by: ");
+      else if(!strcmp("0-1", tagContent[12])) printf("Black won by: ");
+      printf("%s\n", tagContent[13]);
+   }
+}
+
+void clearScreen() {
+   for(int i = 0; i < 128; i++) printf("\n");
+}
+
+Board extractBoard(int curMove, bool turn) {
+   BitMove bitMove = rawToBit(translateAlgebraic(rawMoves[curMove-1], turn));
+   if(variantions[0] != -1 && (variantions[preVariationBoardIndx+1]+2 == curMove || (variantions[preVariationBoardIndx+1]+3 == curMove && positions[curMove-1].turn != turn))) return applyBitMove(bitMove, positions[variantions[preVariationBoardIndx]]);
+   return positions[curMove-1].turn == turn ? applyBitMove(bitMove, positions[curMove-1]) : applyBitMove(bitMove, positions[curMove-2]);
+}
+
+void printAll(char* moves, int curMove) {
+   formatMoves(moves, curMove);
+   printf("\n");
+
+   if(is_board_null(positions[curMove+1])) positions[curMove+1] = extractBoard(curMove+1, turn);
+   printBoard(positions[curMove+1]);
+
+   printTags();
+   printf("Input \"a\" to go back a move, \"d\" to go forward a move or \"0\" to terminate the program.\n");
+}
+
+int main(int argc, char* argv[]) {
+   if(argc < 2) return printf("To read a .pgn file, use the program as follows <executable> <path to .pgn>.\n");
+   path = argv[1];
+   readFile();
+   
+   positions[0] = STARTING_BOARD;
+   char* moves = extractTags();
+   extractMoves(moves);
+   printAll(moves, -1);
+
+   int curMove = -1;
+   char c;
+   while(1) {
+      do c = getc(stdin);
+      while(c != 'd' && c != 'a' && c != '0');
+
+      if(c == '0') break;
+      c == 'a' ? curMove-- : curMove++;
+      if(curMove < 0) curMove = -1;
+      else if(rawMoves[curMove][0] == 0) curMove--;
+      clearScreen();
+      printAll(moves, curMove);
+   }
+   return 0;   
+}

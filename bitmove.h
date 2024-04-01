@@ -1,3 +1,4 @@
+/*
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -199,3 +200,37 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+*/
+
+#include<stdbool.h>
+#include<stdint.h>
+#include"./board.c"
+
+//Algebraic notation
+struct RawMove {
+	//0 -> white 1 -> black
+	bool movingSide;
+	uint8_t movedPiece;
+	char org[2];
+	char dest[2];
+	bool capture;
+	//0 if false, otherwise index of piece promoted to
+	uint8_t promotion;
+};
+typedef struct RawMove RawMove;
+
+const RawMove rawWShortCastle = (RawMove){0, 6, 0, 0, 0, 0, 0, 0};
+const RawMove rawWLongCastle = (RawMove){0, 7, 0, 0, 0, 0, 0, 0};
+const RawMove rawBShortCastle = (RawMove){1, 6, 0, 0, 0, 0, 0, 0};
+const RawMove rawBLongCastle = (RawMove){1, 7, 0, 0, 0, 0, 0, 0};
+
+//Bit notation, see ./bitconsts.h
+struct BitMove {
+	bool movingSide;
+	uint8_t movedPiece;
+	uint64_t org;
+	uint64_t dest;
+	bool capture;
+	uint8_t promotion;
+};
+typedef struct BitMove BitMove;

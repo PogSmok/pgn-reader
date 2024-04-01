@@ -1,3 +1,4 @@
+/*
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -199,3 +200,40 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+*/
+
+#include<stdbool.h>
+#include<stdint.h>
+#include<limits.h>
+#include"./bitconsts.h"
+
+//This is the datatype in which piece locations of a position are stored
+//see ./bitconsts for visual explanation of respresentation
+struct Board {
+	//pieces[0] -> pawns, pieces[1] -> knights, pieces[2] -> bishops, pieces[3] -> rooks, pieces[4] -> queens, pieces[5] -> kings
+	uint64_t white[PIECE_TYPE_COUNT];
+	uint64_t black[PIECE_TYPE_COUNT];
+   bool turn;
+};
+typedef struct Board Board;
+
+const struct Board STARTING_BOARD = {
+		{
+		0x000000000000FF00,
+		0x0000000000000042,
+		0x0000000000000024,
+		0x0000000000000081,
+		0x0000000000000008,
+		0x0000000000000010,
+		},
+		{
+		0x00FF000000000000,
+		0x4200000000000000,
+		0x2400000000000000,
+		0x8100000000000000,
+		0x0800000000000000,
+		0x1000000000000000,
+		},
+      //false -> white to move, true -> black to mvoe
+      false,
+};
