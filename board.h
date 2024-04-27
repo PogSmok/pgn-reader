@@ -202,38 +202,48 @@
    limitations under the License.
 */
 
-#include<stdbool.h>
+#ifndef BOARD_H_INCLUDED
+#define BOARD_H_INCLUDED
+
 #include<stdint.h>
-#include<limits.h>
-#include"./bitconsts.h"
+#include<stdbool.h>
+
+#include"consts.h"
 
 //This is the datatype in which piece locations of a position are stored
-//see ./bitconsts for visual explanation of respresentation
+//see bitconsts.c for visual explanation of respresentation
 struct Board {
 	//pieces[0] -> pawns, pieces[1] -> knights, pieces[2] -> bishops, pieces[3] -> rooks, pieces[4] -> queens, pieces[5] -> kings
 	uint64_t white[PIECE_TYPE_COUNT];
 	uint64_t black[PIECE_TYPE_COUNT];
-   bool turn;
+    bool turn;
 };
 typedef struct Board Board;
 
-const struct Board STARTING_BOARD = {
-		{
-		0x000000000000FF00,
+//Default starting position of a chess game (rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1)
+static const Board STARTING_BOARD = {
+	{
+	    0x000000000000FF00,
 		0x0000000000000042,
 		0x0000000000000024,
 		0x0000000000000081,
 		0x0000000000000008,
 		0x0000000000000010,
-		},
-		{
+	},
+	{
 		0x00FF000000000000,
 		0x4200000000000000,
 		0x2400000000000000,
 		0x8100000000000000,
 		0x0800000000000000,
 		0x1000000000000000,
-		},
-      //false -> white to move, true -> black to mvoe
-      false,
+	},
+    //false -> white to move, true -> black to mvoe
+    false,
 };
+
+bool isBoardNull(Board board);
+uint64_t allPieces(Board board);
+Board fenToBoard(char* fen);
+
+#endif //#ifndef BOARD_H_INCLUDED

@@ -202,11 +202,17 @@
    limitations under the License.
 */
 
-#include<stdbool.h>
-#include<stdint.h>
-#include"./bitmove.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <limits.h>
 
-int pieceToIndex(char c) {
+#include "consts.h"
+#include "bitconsts.h"
+#include "board.h"
+#include "bitmove.h"
+
+//Returns index of a piece (see ./consts.h) for each piece representation in algebraic notation (N, B, R, Q, K)
+uint8_t pieceToIndex(char c) {
 	switch (c) {
 		case 'N': return 1;
 		case 'B': return 2;
@@ -216,21 +222,25 @@ int pieceToIndex(char c) {
 	}
 }
 
-//Convert algebraic notation to RawMove structure
+//Converts algebraic notation move to RawMove structure
 RawMove translateAlgebraic(char* c, bool movingSide) {
+   //Handle castling, those moves have special representations  
    if(*c == 'O') {
       if(*(c+3) == '-') return movingSide ? rawBLongCastle : rawWShortCastle; 
       return movingSide ? rawBShortCastle : rawWShortCastle;
    }
+
 	char org[2] = {}, dest[2] = {};
 	bool capture = false;
 	uint8_t movedPiece = 0, promotedPiece = 0;
 	
+   //If condition is met it is a piece move, otherwise we are moving a pawn
 	if(*c > 'A' && *c < 'Z') movedPiece = pieceToIndex(*c);
 	else {
 		movedPiece = 0;
 		org[0] = *c--;
 	}
+
 	char* i;
 	for(i = c+1; *i != '\0'; i++) {
 		if(*i >= 'a' && *i <= 'h') {
@@ -249,29 +259,36 @@ RawMove translateAlgebraic(char* c, bool movingSide) {
    return (RawMove){movingSide, movedPiece, org[0], org[1], dest[0], dest[1], capture, promotedPiece};
 }
 
+//Converts algebraic notation move to bit representation (see bitconsts.c)
 uint64_t squareToBitSquare(char file, char rank) {
 	return (uint64_t)1<<((rank - '1')<<3)<<(file - 'a');
 }
 
+//Converts returns index of '1'(there always is one and only one bit set to '1') in a bit representation of a square (see bitconsts.c)
 uint64_t bitSquareToIndex(uint64_t bitSquare) {
    uint64_t i = 0, it = 1;
    while(!(bitSquare & it)) it<<=1, i++;
    return i;
 }
 
+//Returns bit representation of a file (see bitconsts.c), if input is not a file returns the whole board
 uint64_t fileToBitFile(char file) {
-	return file ? ALL_BITFILES[file-'a'] : ALL_BITFILES;
+	return file ? ALL_BITFILES[file-'a'] : WHOLE_BOARD;
 }
 
+//Returns bit representation of a rank (see bitconsts.c), if input is not a file returns the whole board
 uint64_t rankToBitRank(char rank) {
-	return rank ? ALL_BITRANKS[rank-'a'] : ALL_BITRANKS;
+	return rank ? ALL_BITRANKS[rank-'a'] : WHOLE_BOARD;
 }
 
+//Transform RawMove into BitMove
 BitMove rawToBit(RawMove raw) {
    uint64_t org_mask = (raw.org[0] ? fileToBitFile(raw.org[0]) : WHOLE_BOARD) & (raw.org[1] ? rankToBitRank(raw.org[1]) : WHOLE_BOARD); 
    return (BitMove){raw.movingSide, raw.movedPiece, org_mask, squareToBitSquare(raw.dest[0], raw.dest[1]), raw.capture, raw.promotion};
 }
 
+//MSB -> Most Significant Bit
+//Returns integer with '1' at the place of the least significant bit
 uint64_t MSB(uint64_t n) {
 	n |= n >> 1;
 	n |= n >> 2;
@@ -279,38 +296,112 @@ uint64_t MSB(uint64_t n) {
 	n |= n >> 8;
 	n |= n >> 16;
 	n |= n >> 32;
-	n = ((n + 1) >> 1) | (n & (1 << ((sizeof(n) * CHAR_BIT)-1)));
-	return n;
+	//sizeof(n) * CHAR_BIT - 1 (63 for 4 bit chars)
+	return ((n + 1) >> 1) | (n & ((uint64_t)1 << (sizeof(n)*CHAR_BIT)-1));
 }
 
+//LSB -> Least Significant Bit
+//Returns integer with '1' at the place of the least significant bit
 uint64_t LSB(uint64_t n) {
 	return n &= -n;
 }
 
-uint64_t extract_origin(BitMove bitMove, Board board) {
+//Expands between mask to pin ray, returns 0 if no such ray exists
+uint64_t generatePinRay(uint64_t piece, uint64_t king, bool *pinRayType) {
+   uint8_t pieceIndex = bitSquareToIndex(piece), kingIndex = bitSquareToIndex(king);
+   if(!BETWEEN_MASK[pieceIndex][kingIndex]) return 0;
+
+   //Vertical rook pin (For example A1-H1)
+   if(pieceIndex&7 == kingIndex&7) return ALL_BITFILES[pieceIndex&7];
+   //Horizontal rook pin (For example A1-A8)
+   else if(pieceIndex>>3 == kingIndex>>3) return ALL_BITRANKS[pieceIndex>>3];
+   
+   *pinRayType = true;
+   //Diagonal "to the left" (For example A1-H8)
+   if(ALL_L_DIAG[(pieceIndex&7) + (pieceIndex>>3)] & ALL_L_DIAG[(kingIndex&7) + (kingIndex>>3)]) return ALL_L_DIAG[(pieceIndex&7) + (pieceIndex>>3)];
+   //Diagonal "to the right" (For example A8-H1)
+   return ALL_R_DIAG[((pieceIndex&7)-(pieceIndex>>3)+DIAGONAL_COUNT)%DIAGONAL_COUNT];
+}
+
+uint64_t validateMove(uint64_t cand, uint64_t king, BitMove *bitMove, Board *board) {
+   uint64_t end = MSB(cand), it = LSB(cand), pieceToCheck, directedPinRay, pinRay;
+   uint64_t (*enemy)[PIECE_TYPE_COUNT] = (*bitMove).movingSide ? &(*board).white : &(*board).black;
+   while(it != end) {
+      uint8_t kingIndex = bitSquareToIndex(king), itIndex = bitSquareToIndex(it);
+      bool pinRayType;
+      //The path is not blocked by a piece
+      if((BETWEEN_MASK[itIndex][bitSquareToIndex((*bitMove).dest)] & allPieces(*board)) == 0) {
+         //Generate posssible pin ray, pinray type is false for rook and true for a diagonal
+         pinRayType = false;
+         pinRay = generatePinRay(it, king, &pinRayType);
+         //The origin is legal, return it
+         if(pinRay == 0) return it;
+         
+         //Direct the pinray
+         if(kingIndex>>3 == itIndex>>3)
+            directedPinRay = king > it ? pinRay & BITFILES_TO[(kingIndex&7)-1] : pinRay & (WHOLE_BOARD ^ BITFILES_TO[kingIndex&7]);
+         else 
+            directedPinRay = king > it ? pinRay & BITRANKS_TO[(kingIndex>>3)-1] : pinRay & (WHOLE_BOARD ^ BITRANKS_TO[kingIndex>>3]);
+         
+         //Moves along pinray, thus is a legal move
+         if(pinRay & (*bitMove).dest) return it;
+
+         //Check if the piece is actually pinned
+         if(LSB(directedPinRay) > LSB(pinRay)) 
+            pieceToCheck = LSB(directedPinRay);
+         else
+            pieceToCheck = MSB(directedPinRay);
+
+         if(pinRayType)
+            if((((*enemy)[BISHOP_INDEX] | (*enemy)[QUEEN_INDEX]) & pieceToCheck) == 0) return it;
+         else
+            if((((*enemy)[ROOK_INDEX] | (*enemy)[QUEEN_INDEX]) & pieceToCheck) == 0) return it;
+      }
+      cand ^= it;
+      while(!(it&cand)) it<<=1;
+   }
+   return end;
+}
+
+//Returns bit representation of a square from which a piece must've been moved 
+uint64_t extractOrigin(BitMove bitMove, Board board) {
    uint64_t (*our)[PIECE_TYPE_COUNT] = bitMove.movingSide ? &board.black : &board.white;
+   uint64_t cand;
    switch(bitMove.movedPiece) {
       case PAWN_INDEX: 
-         uint64_t cand = bitMove.org & (*our)[PAWN_INDEX], move_mask = bitMove.dest >> 8;
-         if(bitMove.movingSide) move_mask = bitMove.dest << 8;
-         if(bitMove.capture) move_mask = bitMove.movingSide ? WHITE_PAWN_ATTACK_MASK[bitSquareToIndex(bitMove.dest)] : BLACK_PAWN_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
-        
-         if(cand & move_mask) return cand & move_mask;
-         //If we get here, it must be a double push
-         return bitMove.movingSide ? bitMove.dest << 16 : bitMove.dest >> 16;
+         cand = bitMove.org & (*our)[PAWN_INDEX];
+         uint64_t moveMask = (bitMove.dest >> 8);
+         if(!bitMove.movingSide && bitMove.dest & BITRANK_4) moveMask |= bitMove.dest >> 16;
+
+         if(bitMove.movingSide) moveMask = (bitMove.dest << 8);
+         if(bitMove.movingSide && bitMove.dest & BITRANK_5) moveMask |= bitMove.dest << 16;
+
+         if(bitMove.capture) moveMask = bitMove.movingSide ? WHITE_PAWN_ATTACK_MASK[bitSquareToIndex(bitMove.dest)] : BLACK_PAWN_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         cand = moveMask&cand;
+         if(LSB(cand) == cand) return cand;
+         return validateMove(cand, (*our)[KING_INDEX], &bitMove, &board);
       case KNIGHT_INDEX:
-         return bitMove.org & (*our)[KNIGHT_INDEX] & KNIGHT_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         cand = bitMove.org & (*our)[KNIGHT_INDEX] & KNIGHT_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         if(LSB(cand) == cand) return cand;
+         return validateMove(cand, (*our)[KING_INDEX], &bitMove, &board);
       case BISHOP_INDEX:
-         return bitMove.org & (*our)[BISHOP_INDEX] & BISHOP_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         cand = bitMove.org & (*our)[BISHOP_INDEX] & BISHOP_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         if(LSB(cand) == cand) return cand;
+         return validateMove(cand, (*our)[KING_INDEX], &bitMove, &board);
       case ROOK_INDEX:
-         return bitMove.org & (*our)[ROOK_INDEX] & ROOK_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         cand = bitMove.org & (*our)[ROOK_INDEX] & ROOK_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
+         if(LSB(cand) == cand) return cand;
+         return validateMove(cand, (*our)[KING_INDEX], &bitMove, &board);
       case QUEEN_INDEX: 
-         return bitMove.org & (*our)[QUEEN_INDEX] & (BISHOP_ATTACK_MASK[bitSquareToIndex(bitMove.dest)] | ROOK_ATTACK_MASK[bitSquareToIndex(bitMove.dest)]);
+         cand = bitMove.org & (*our)[QUEEN_INDEX] & (BISHOP_ATTACK_MASK[bitSquareToIndex(bitMove.dest)] | ROOK_ATTACK_MASK[bitSquareToIndex(bitMove.dest)]);
+         if(LSB(cand) == cand) return cand;
+         return validateMove(cand, (*our)[KING_INDEX], &bitMove, &board);
       default:
          return bitMove.org & (*our)[KING_INDEX] & KING_ATTACK_MASK[bitSquareToIndex(bitMove.dest)];
    }
 }
 
+//Applies a move to a board and returns the board after the move is done
 Board applyBitMove(BitMove bitMove, Board board) {
    uint64_t (*our)[PIECE_TYPE_COUNT] = bitMove.movingSide ? &board.black : &board.white;
 	uint64_t (*their)[PIECE_TYPE_COUNT] = bitMove.movingSide ? &board.white : &board.black;
@@ -320,10 +411,10 @@ Board applyBitMove(BitMove bitMove, Board board) {
 	if(bitMove.movedPiece == 6) {
 		if(bitMove.movingSide) {
 			(*our)[KING_INDEX] = BITFILE_G & BITRANK_8;
-			(*our)[ROOK_INDEX] = (*our)[ROOK_INDEX] ^ MSB((*our)[ROOK_INDEX]) ^ (BITFILE_F & BITRANK_8);
+			(*our)[ROOK_INDEX] ^= MSB((*our)[ROOK_INDEX]) ^ (BITFILE_F & BITRANK_8);
 		} else {
 			(*our)[KING_INDEX] = BITFILE_G & BITRANK_1;
-			(*our)[ROOK_INDEX] = (*our)[ROOK_INDEX] ^ MSB((*our)[ROOK_INDEX]) ^ (BITFILE_F & BITRANK_1);
+			(*our)[ROOK_INDEX] ^= MSB((*our)[ROOK_INDEX]) ^ (BITFILE_F & BITRANK_1);
 		}
 		return board;
 	}
@@ -338,7 +429,7 @@ Board applyBitMove(BitMove bitMove, Board board) {
 		return board;
 	}
 
-   uint64_t origin = extract_origin(bitMove, board);
+   uint64_t origin = extractOrigin(bitMove, board);
    //Remove moved piece from original square
    (*our)[bitMove.movedPiece] ^= origin;
 

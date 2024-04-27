@@ -1,13 +1,61 @@
 [Event "Third Rosenwald Trophy"]
-[Site "New York, USA"]
+[Site "New York, NY USA"]
 [Date "1956.10.17"]
 [Round "8"]
 [White "Donald Byrne"]
-[Black "Bobby Fischer"]
+[Black "Robert James Fischer"]
 [Result "0-1"]
-[Variant "Standard"]
-[ECO "A15"]
-[Opening "English Opening: Anglo-Indian Defense, King's Indian Formation"]
-[Annotator "https://lichess.org/@/Lichess"]
+[EventDate "1956.10.07"]
+[ECO "D92"]
+[WhiteElo "?"]
+[BlackElo "?"]
+[PlyCount "82"]
 
-1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. d4 O-O 5. Bf4 d5 6. Qb3 dxc4 7. Qxc4 c6 8. e4 Nbd7 9. Rd1 Nb6 10. Qc5 Bg4 11. Bg5 Na4! 12. Qa3 Nxc3 13. bxc3 Nxe4 14. Bxe7 Qb6 15. Bc4 Nxc3 16. Bc5 Rfe8+ 17. Kf1 Be6!! 18. Bxb6 Bxc4+ 19. Kg1 Ne2+ 20. Kf1 Nxd4+ 21. Kg1 Ne2+ 22. Kf1 Nc3+ 23. Kg1 axb6 24. Qb4 Ra4 25. Qxb6 Nxd1 26. h3 Rxa2 27. Kh2 Nxf2 28. Re1 Rxe1 29. Qd8+ Bf8 30. Nxe1 Bd5 31. Nf3 Ne4 32. Qb8 b5 33. h4 h5 34. Ne5 Kg7 35. Kg1 Bc5+ 36. Kf1 Ng3+ 37. Ke1 Bb4+ 38. Kd1 Bb3+ 39. Kc1 Ne2+ 40. Kb1 Nc3+ 41. Kc1 Rc2# 0-1
+1. Nf3 {A flexible move, committing no central pawns and a favorite of the great Kramnik.}
+1... Nf6 {Equally flexible in response.} 2. c4 {Establishing some central control and preparing Nc3.}
+2... g6 {Bobby was a lover of placing bishops on long diagonals, especially in his youth!}
+3. Nc3 {Establishing control of the light squares (d5 and e4) in the center.}
+3... Bg7 {\"Fianchettoing\" the bishop and getting ready to castle.}
+4. d4 {Reverting to a d4-opening.} 4... O-O {Castling!} 5. Bf4 {Avoiding the King's Indian Defense.}
+(5. e4 {The King's Indian Defense, an opening destined to be associated with Bobby.}) 
+5... d5 {The Gruenfeld Defense - This sharp opening allows White a big center and tries to attack it with active pieces.}
+6. Qb3 {Pressuring d5 and b7.} 6... dxc4 {Giving up a stake in the center and seeking to gain time attacking the queen after it recaptures on c4.}
+7. Qxc4 {Recapturing.} 7... c6 {Advancing the attacked c-pawn and controlling d5. This is considered a bit passive today.
+...Na6, preparing to play ...c5, is preferred.} 8. e4 {Building the perfect pawn center.} 8... Nbd7 {Developing the knight.} 
+9. Rd1 {Placing the rook in support of the center. This does not feel like the most useful move though.} 
+(9. Be2 {Why not get ready to castle?}) 9... Nb6 {Hitting the queen.}
+10. Qc5 {Keeping an overly advanced posture? This move is not a mistake yet, but it is risky and creates the tactical opportunity in two moves.}
+(10. Qb3) 10... Bg4 {developing the final minor piece and threatening to double the pawns.} 11. Bg5? { One too many dubious moves.
+This accomplishes nothing AND it places the bishop on a vulnerable square after Bobby's next brilliant move!} (11. Be2 {Castle. Simple.}) 11... Na4!!
+{Fischer strikes! This move undermines the knight on c3 which holds e4. 
+\"A brilliant most surprising stroke ... A murmur went through the tournament room after this move,
+and the kibitzers thronged to Fischer's table as a fish to a hole in the ice.\" - Hans
+Kmoch in Chess Review from 1956} 12. Qa3 {Retreating the queen while trying to keep an eye on e7.}
+(12. Nxa4 {Accepting the sacrificed knight.} 12... Nxe4 {The knight threatens both c5 and g5. Note also that ...Qa5+ can also be possible.}
+13. Bxe7 {Threatening the black queen instead of retreating.} (13. Qxe7 Qa5+!
+{attacks too many White pieces.}) 13... Re8 14. Bxd8 Nxc5+ 15. Be2 Bxf3 16. gxf3
+Nxa4 {Black is about to win a pawn and has a much better structure and better
+pieces.}) 12... Nxc3 {Eliminating the defender of the e4-square.} 13. bxc3
+{Recapturing.} 13... Nxe4! { Fischer gives up e7, but he rips open the center.}
+14. Bxe7 {Faced with total collapse in the center, Byrne tries to win material for his trouble by forking the queen and rook.} 14... Qb6
+{Advancing the threatened queen to create more threats.} 15. Bc4 {Finally developing the last piece and hoping to castle.}
+(15. Bxf8 {This doesn't work because the bishop on g7 now gets to swing around to attack the queen and create a pin tactic.} 15... Bxf8 16. Qb3 Nxc3! 17. Qxc3 Bb4!9) 15... Nxc3!
+{ Clearing the e-file so that ...Re8 might win the bishop on e7.}
+16. Bc5 {Pulling the bishop off the dangerous e-file and attacking the queen. Has Fischer missed this?
+Will he lose the c3-knight after retreating the queen?} (16. Qxc3 Rae8!9 {The pinned bishop
+cannot be saved.}) 16... Rfe8+ {Fischer first activates the rook and threatens the white king.} 
+17. Kf1 {The only logical way out of check. Fischer now has a queen and knight hanging. What is to be done?}
+17... Be6!! { The second brilliant move! Fischer leaves his queen hanging and threatens the bishop on c4!
+All the tactics work perfectly for Fischer.} 18. Bxb6 {Byrne accepts the queen.}
+(18. Bxe6 {This move allows the famous \"smothered mate\" pattern.} 18... Qb5+ 19. Kg1 Ne2+ 20. Kf1
+Ng3+ 21. Kg1 Qf1+! 22. Rxf1 Ne2#) (18. Qxc3 Qxc5!!9 { A nice pin to pick off the bishop.}) 
+18... Bxc4+ {Fischer snags the bishop with check, but more importantly, he sets up a \"windmill,\" a repeating sequence of checks that wins material.}
+19. Kg1 {forces} 19... Ne2+ {Dragging the king back into the line of fire.} 20. Kf1 {forces} 20... Nxd4+ {Snagging a pawn.} 21. Kg1 {forces} 21... Ne2+ {Dragging the king back again.} 22. Kf1 {forces}
+22... Nc3+ {Attacking the rook on d1.} 23. Kg1 {forces} 23... axb6! 
+{ Fischer picks up the bishop AND attacks the queen and the rook on d1.} 24. Qb4 {Trying to save the game by attacking the bishop on b5.} 
+(24. Qc1 {Trying to defend the d1-rook.} 24... Ne2+ {A nasty royal fork.})
+24... Ra4! { A nice move that threatens the queen and defends the valuable bishop on a4.} 25. Qxb6 {Saving the queen and picking up a pawn.} 
+25... Nxd1 {Fischer has a rook, two bishops, and a pawn for the queen AND the rook on h1 is completely out of play. 
+The game is over at this point, and I'll save the remaining explanations for the video :)}
+26. h3 Rxa2 27. Kh2 Nxf2 28. Re1 Rxe1 29. Qd8+ Bf8 30. Nxe1 Bd5 31. Nf3 Ne4 32. Qb8 b5! 33. h4 h5! 34. Ne5 Kg7 35. Kg1 Bc5+ 36. Kf1
+Ng3+ 37. Ke1 Bb4+ 38. Kd1 Bb3+ 39. Kc1 Ne2+ 40. Kb1 Nc3+ 41. Kc1 Rc2# 0-1

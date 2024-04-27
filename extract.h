@@ -202,22 +202,15 @@
    limitations under the License.
 */
 
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef EXTRACT_H_INCLUDED
+#define EXTRACT_H_INCLUDED
 
 #include "consts.h"
 #include "board.h"
 
-bool isBoardNull(Board board) {
-   return !(board.white[KING_INDEX] | board.black[KING_INDEX]);
-}
-
-//Return all occupied squares
-uint64_t allPieces(Board board) {
-   return board.white[PAWN_INDEX] | board.white[KNIGHT_INDEX] | board.white[BISHOP_INDEX] | board.white[ROOK_INDEX] | board.white[QUEEN_INDEX] | board.white[KING_INDEX] | board.black[PAWN_INDEX] | board.black[KNIGHT_INDEX] | board.black[BISHOP_INDEX] | board.black[ROOK_INDEX] | board.black[QUEEN_INDEX] | board.black[KING_INDEX];
-}
-
-//Extract board struct from FEN notation
-Board fenToBoard(char* fen) {
-   return STARTING_BOARD;
-}
+void readFile(char* path, char* pgnContent);
+char* extractTags(char* path, char* pgnContent, char  (*tagContent)[MAX_TAG_VALUE_LENGTH]);
+void extractMoves(char* moves, char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH]);
+void fillPositions(char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], Board* positions, Board startingPosition);
+void extractAll(char* path, char* pgnContent, char (*tagContent)[MAX_TAG_VALUE_LENGTH], char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH], Board* positions);
+#endif //#ifndef EXTRACT_H_INCLUDED

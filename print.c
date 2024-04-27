@@ -202,22 +202,153 @@
    limitations under the License.
 */
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "consts.h"
+#include "bitconsts.h"
 #include "board.h"
+#include "print.h"
 
-bool isBoardNull(Board board) {
-   return !(board.white[KING_INDEX] | board.black[KING_INDEX]);
+void clearScreen() {
+   for(int i = 0; i < 128; i++) printf("\n");
 }
 
-//Return all occupied squares
-uint64_t allPieces(Board board) {
-   return board.white[PAWN_INDEX] | board.white[KNIGHT_INDEX] | board.white[BISHOP_INDEX] | board.white[ROOK_INDEX] | board.white[QUEEN_INDEX] | board.white[KING_INDEX] | board.black[PAWN_INDEX] | board.black[KNIGHT_INDEX] | board.black[BISHOP_INDEX] | board.black[ROOK_INDEX] | board.black[QUEEN_INDEX] | board.black[KING_INDEX];
+void printTags(char (*tagContent)[MAX_TAG_VALUE_LENGTH]) {
+   if(tagContent[11][0]) printf("%s\n", tagContent[11]);
+   if(tagContent[15][0]) {
+      printf("%s", tagContent[15]);
+      tagContent[16][0] ? printf(" Round: %s\n", tagContent[16]) : printf("\n");
+   }
+
+   if(tagContent[0][0]) {
+      if(tagContent[2][0]) printf("%s ", tagContent[2]);
+      printf("%s", tagContent[0]);
+      if(tagContent[1][0]) printf(" (%s)", tagContent[1]);
+   } else printf("Unknown");
+   printf(" vs ");
+   if(tagContent[5][0]) {
+      if(tagContent[7][0]) printf("%s ", tagContent[7]);
+      printf("%s", tagContent[5]);
+      if(tagContent[6][0]) printf(" (%s)", tagContent[6]);
+   } else printf("Unknown");
+   printf("\n");
+   if(tagContent[12][0]) {
+      printf("%s -> ", tagContent[12]);
+      if(!strcmp("1-0", tagContent[12])) printf("White won the game\n");
+      else if(!strcmp("0-1", tagContent[12])) printf("Black won the game\n");
+      else if(!strcmp("1/2-1/2", tagContent[12])) printf("The game ended in a draw\n");
+      else printf("Result of the game is unknown\n");
+   }
 }
 
-//Extract board struct from FEN notation
-Board fenToBoard(char* fen) {
-   return STARTING_BOARD;
+void tabulate(char** c, int tabAmount) {
+   for(int spaces = 0; spaces < AMOUNT_OF_SPACES_IN_TAB*tabAmount; spaces++, ++*c) **c = ' ';
+}
+
+void fullMoveString(int* newLinesBeforeMove, int* allNewLines, char* moveString, char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH], Board* positions) {
+   char* i = moveString;
+   int commentIndex = 0, newLineCount = 0, realMoveIndex = 1, depth = 0, moveIndexForDepth[MAX_VARIATION_DEPTH] = {1};
+   for(int moveIndex = 0; rawMoves[moveIndex][0] != '\0'; moveIndex++) {
+      if(rawMoves[moveIndex][0] == '-') {
+         depth--;
+         continue;
+      }
+      if(rawMoves[moveIndex][0] == '+') {
+         depth++, moveIndexForDepth[depth] = moveIndexForDepth[depth-1];
+         continue;
+      }
+
+      if(rawMoves[moveIndex][0] == '0') {
+         *i++ = '\n', newLineCount++;
+         tabulate(&i, depth);
+         *i++ = '#', *i++ = ' ';
+         for(char* j = comments[commentIndex]; *j != '\0'; j++) {
+            *i++ = *j;
+            if(*j == '\n') {
+                tabulate(&i, depth);
+                *i++ = '#', *i++ = ' ', newLineCount++;
+            }
+         }
+         commentIndex++;
+         continue;
+      }
+
+      //Surround moves with special characters, to later target them easily
+      char charMoveIndex[5];
+      if(moveIndex == 0 || rawMoves[moveIndex-1][0] == '+' || rawMoves[moveIndex-1][0] == '-' || rawMoves[moveIndex-1][0] == '0') {
+         *i++ = '\n', newLineCount++, newLinesBeforeMove[realMoveIndex] = newLineCount;
+         tabulate(&i, depth);
+         sprintf(charMoveIndex, "%i", moveIndexForDepth[depth]);
+         for(char* j = charMoveIndex; *j != '\0'; j++) *i++ = *j;
+
+         if(!positions[realMoveIndex++].turn) *i++ = '.', *i++ = '.', moveIndexForDepth[depth]++;
+         *i++ = '.', *i++ = ' ', *i++ = SPECIAL_MOVE_HIGHLIGH_CHAR;
+         for(char *j  = rawMoves[moveIndex]; *j != '\0'; j++) *i++ = *j;
+      } else if(!positions[realMoveIndex].turn) {
+         *i++ = ' ', *i++ = SPECIAL_MOVE_HIGHLIGH_CHAR, newLinesBeforeMove[realMoveIndex++] = newLineCount;
+         for(char *j  = rawMoves[moveIndex]; *j != '\0'; j++) *i++ = *j;
+      } else {
+         moveIndexForDepth[depth]++, *i++ = '\n', newLineCount++, newLinesBeforeMove[realMoveIndex++] = newLineCount;
+         tabulate(&i, depth);
+         sprintf(charMoveIndex, "%i", moveIndexForDepth[depth]);
+         for(char* j = charMoveIndex; *j != '\0'; j++) *i++ = *j;
+         *i++ = '.', *i++ = ' ', *i++ = SPECIAL_MOVE_HIGHLIGH_CHAR;
+         for(char *j = rawMoves[moveIndex]; *j != '\0'; j++) *i++ = *j;
+      }
+   }
+   *allNewLines = newLineCount;
+}
+
+void printBoard(Board board) {
+   uint64_t i = (BITFILE_A & BITRANK_8) >> 1;
+   uint8_t rank = 8, j, k;
+
+   //Iterate rank by rank, starting from rank 8
+   while(rank != 0) {
+      printf("%i | ", rank--);
+      //For each square in rank
+      for(j = 0; j < 8; j++) {
+         i <<= 1;
+         if(i == 0) i = 1;
+
+         //Check if each piece   
+         for(k = 0; k < PIECE_TYPE_COUNT; k++){
+            if(board.white[k] & i) {
+               printf(" %c ", PIECE_CHARS[k]);
+               break;
+            } else if(board.black[k] & i) {
+               printf(" %c ", PIECE_CHARS[k+6]);
+               break;
+            }
+         }
+         //Piece is not there, the square is empty
+         if(k == 6) printf(" 0 ");
+      }
+      printf("\n");
+      //Go back to the beginning of the rank i>>=8 and then to the beginning of the rank below i>>8
+      i >>= 16;
+   }
+   printf("  -------------------------\n     a  b  c  d  e  f  g  h\n");
+}
+
+void printMoves(int curMove, int skipNewLines, int allNewLines, char* moveString, Board* positions, char (*tagContent)[MAX_TAG_VALUE_LENGTH]) {
+   clearScreen();
+   int count = 0, newLines = 0, realIndex = 0;
+   for(char* c = moveString; *c != '\0'; c++) {
+      if(*c == '\n') newLines++;
+      if(*c == SPECIAL_MOVE_HIGHLIGH_CHAR) {
+        if(++count == curMove) printf(">>>");
+        continue;
+      }
+
+      int missedBefore = skipNewLines < AMOUNT_OF_PRINTED_LINES/2 ? AMOUNT_OF_PRINTED_LINES/2 - skipNewLines : 0;
+      int missedAfter = skipNewLines + AMOUNT_OF_PRINTED_LINES/2 > allNewLines ? skipNewLines + AMOUNT_OF_PRINTED_LINES/2 - allNewLines : 0;
+      if(!(skipNewLines-newLines-missedAfter > AMOUNT_OF_PRINTED_LINES/2 || newLines-skipNewLines-missedBefore > AMOUNT_OF_PRINTED_LINES/2)) printf("%c", *c);
+   }
+   printf("\n\n");
+   printBoard(positions[curMove]);
+   printTags(tagContent);
+   printf("Input \"a\" to go back a move, \"d\" to go forward and \"0\" to terminate the program.\n");
 }

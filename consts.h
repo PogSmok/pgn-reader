@@ -202,30 +202,37 @@
    limitations under the License.
 */
 
-#include<stdint.h>
+#ifndef CONSTS_H_INCLUDED
+#define CONSTS_H_INCLUDED
 
-#define MAX_PATH_LENGTH 127
-#define MAX_PGN_LENGTH 262143
-#define MAX_COMMENT_COUNT 63
+//Maximum amount of characters in .pgn file
+#define MAX_PGN_SIZE 262143
+
+//Maximum amount of separate comments
+#define MAX_COMMENT_COUNT 511
+//Maximum length of a singular comment
 #define MAX_COMMENT_LENGTH 511
-#define MAX_VARIANTION_COUNT 63
+#define MAX_VARIATION_DEPTH 7
+
 //Maximum number of moves in PGN
-#define MAX_MOVES 1023
+#define MAX_MOVES 2047
 
 #define PLAYER_COUNT 2
 #define SQUARE_COUNT 64
 
-//Maximum possible length in characters of FEN
+//Maximum length of a FEN string
 #define MAX_FEN_LENGTH 87
+
 //Maximum possible length of a move noted in the algebraic notation
-#define MAX_ALGEBRAIC_LENGTH 8
+#define MAX_ALGEBRAIC_LENGTH 15
 
 #define FILE_COUNT  8
 #define RANK_COUNT  8
 
+#define DIAGONAL_COUNT 15
+
 #define PIECE_TYPE_COUNT  6
 #define ALL_DIRECTIONS_COUNT  8
-#define SLIDER_DIRECTIONS_COUNT  4
 
 #define PAWN_INDEX 0
 #define KNIGHT_INDEX 1
@@ -234,7 +241,7 @@
 #define QUEEN_INDEX 4
 #define KING_INDEX 5
 
-const char PIECE_CHARS[PIECE_TYPE_COUNT*PLAYER_COUNT] = {
+static const char PIECE_CHARS[PIECE_TYPE_COUNT*PLAYER_COUNT] = {
    'P',
    'N',
    'B',
@@ -249,23 +256,12 @@ const char PIECE_CHARS[PIECE_TYPE_COUNT*PLAYER_COUNT] = {
    'k',
 };
 
-const uint8_t DIAGONAL_OFFSETS[SLIDER_DIRECTIONS_COUNT][2] = {{-1,-1}, {-1, 1}, {1, -1}, {1, 1}};
-const uint8_t ORTHAGONAL_OFFSETS[SLIDER_DIRECTIONS_COUNT][2] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
-
-//Short castle or long castle
-#define CASTLING_TYPE_COUNT  2
-
-//Knight, Bishop, Rook, Queen
-#define PROMOTIONS_COUNT  4
-
-#define MAX_LEGAL_MOVES 218
-
 //Maximum length of a .pgn tag
 #define MAX_TAG_LENGTH 11
 #define TAG_COUNT 20
 #define MAX_TAG_VALUE_LENGTH 127
 
-const char* PGN_TAGS[TAG_COUNT] = {
+static const char* PGN_TAGS[TAG_COUNT] = {
    "White",
    "WhiteElo",
    "WhiteTitle",
@@ -288,4 +284,10 @@ const char* PGN_TAGS[TAG_COUNT] = {
    "FEN",
 };
 
-#define AMOUNT_OF_PRINTED_LINES 40
+//Amount of visible lines in console, during a single state
+#define AMOUNT_OF_PRINTED_LINES 30
+#define AMOUNT_OF_SPACES_IN_TAB 5
+
+#define SPECIAL_MOVE_HIGHLIGH_CHAR 127
+
+#endif //#ifndef CONSTS_H_INCLUDED

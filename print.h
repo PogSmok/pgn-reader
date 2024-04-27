@@ -202,22 +202,17 @@
    limitations under the License.
 */
 
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef PRINT_H_INCLUDED
+#define PRINT_H_INCLUDED
 
 #include "consts.h"
 #include "board.h"
 
-bool isBoardNull(Board board) {
-   return !(board.white[KING_INDEX] | board.black[KING_INDEX]);
-}
+void clearScreen();
+void printTags(char (*tagContent)[MAX_TAG_VALUE_LENGTH]);
+void tabulate(char** c, int tabAmount);
+void fullMoveString(int* newLineCount, int* allNewLines, char* moveString, char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH], Board* positions);
+void printBoard(Board board);
+void printMoves(int curMove, int skipNewLines, int allNewLines, char* moveString, Board* positions, char (*tagContent)[MAX_TAG_VALUE_LENGTH]);
 
-//Return all occupied squares
-uint64_t allPieces(Board board) {
-   return board.white[PAWN_INDEX] | board.white[KNIGHT_INDEX] | board.white[BISHOP_INDEX] | board.white[ROOK_INDEX] | board.white[QUEEN_INDEX] | board.white[KING_INDEX] | board.black[PAWN_INDEX] | board.black[KNIGHT_INDEX] | board.black[BISHOP_INDEX] | board.black[ROOK_INDEX] | board.black[QUEEN_INDEX] | board.black[KING_INDEX];
-}
-
-//Extract board struct from FEN notation
-Board fenToBoard(char* fen) {
-   return STARTING_BOARD;
-}
+#endif //#ifndef PRINT_H_INCLUDED

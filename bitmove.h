@@ -202,11 +202,25 @@
    limitations under the License.
 */
 
-#include<stdbool.h>
-#include<stdint.h>
-#include"./board.c"
+#ifndef BITMOVE_H_INCLUED
+#define BITMOVE_H_INCLUED
 
-//Algebraic notation
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "consts.h"
+#include "board.h"
+
+//Structure used for storing moves in algebraic notation
+//Here is how a white move Rbxe6 would look
+// {
+//   0,
+//   ROOK_INDEX,
+//   {'b', 0},
+//   {'e', '6'},
+//   true,
+//   0,
+// }
 struct RawMove {
 	//0 -> white 1 -> black
 	bool movingSide;
@@ -219,18 +233,46 @@ struct RawMove {
 };
 typedef struct RawMove RawMove;
 
-const RawMove rawWShortCastle = (RawMove){0, 6, 0, 0, 0, 0, 0, 0};
-const RawMove rawWLongCastle = (RawMove){0, 7, 0, 0, 0, 0, 0, 0};
-const RawMove rawBShortCastle = (RawMove){1, 6, 0, 0, 0, 0, 0, 0};
-const RawMove rawBLongCastle = (RawMove){1, 7, 0, 0, 0, 0, 0, 0};
+static const RawMove rawWShortCastle = (RawMove){0, 6, 0, 0, 0, 0, 0, 0};
+static const RawMove rawWLongCastle = (RawMove){0, 7, 0, 0, 0, 0, 0, 0};
+static const RawMove rawBShortCastle = (RawMove){1, 6, 0, 0, 0, 0, 0, 0};
+static const RawMove rawBLongCastle = (RawMove){1, 7, 0, 0, 0, 0, 0, 0};
 
-//Bit notation, see ./bitconsts.h
+//Structure used for storing moves converted to bit representation (see bitconsts.c)
+//Here is how a white move Rbxe6 would look
+// {
+//   0,
+//   ROOK_INDEX,
+//   BITFILE_B,
+//   BITFILE_E & BITRANK_6,
+//   true,
+//   0,
+// }
 struct BitMove {
+   //0 -> white 1 -> black
 	bool movingSide;
 	uint8_t movedPiece;
 	uint64_t org;
 	uint64_t dest;
 	bool capture;
+   //0 if false, otherwise index of piece promoted to
 	uint8_t promotion;
 };
 typedef struct BitMove BitMove;
+
+
+uint8_t pieceToIndex(char c);
+RawMove translateAlgebraic(char* c, bool movingSide);
+uint64_t squareToBitSquare(char file, char rank);
+uint64_t bitSquareToIndex(uint64_t bitSquare);
+uint64_t fileToBitFile(char file);
+uint64_t rankToBitRank(char rank);
+BitMove rawToBit(RawMove raw);
+uint64_t MSB(uint64_t n);
+uint64_t LSB(uint64_t n);
+uint64_t generatePinRay(uint64_t piece, uint64_t king, bool *pinRayType);
+uint64_t validateMove(uint64_t cand, uint64_t king, BitMove *bitMove, Board *board);
+uint64_t extractOrigin(BitMove bitMove, Board board);
+Board applyBitMove(BitMove bitMove, Board board);
+
+#endif //#ifndef BITMOVE_H_INCLUED
