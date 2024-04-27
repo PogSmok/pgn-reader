@@ -4,7 +4,7 @@ Lightweight, blazingly fast (overly optimized) CLI for reading .pgn files
 ![Screenshot of The Game of the Century displayed in PGN Reader](https://github.com/PogSmok/pgn-reader/blob/main/EXAMPLE.png?raw=true)
 
 ## Usage
-1. Download the project and compile the program, for example, with gcc. Note: You have to compile all .c files, not only main.c
+1. Download the project and compile the program, for example, with gcc. <br /> Note: You have to compile all .c files, not only main.c
 ```bash
 gcc -o pgn-reader bitconsts.c bitmove.c board.c extract.c main.c print.c
 ```
