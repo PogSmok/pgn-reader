@@ -202,92 +202,167 @@
    limitations under the License.
 */
 
-#ifndef CONSTS_H_INCLUDED
-#define CONSTS_H_INCLUDED
+#include <stdio.h>
+#include <string.h>
 
-//Maximum amount of characters in .pgn file
-#define MAX_PGN_SIZE 262143
+#include "consts.h"
+#include "bitconsts.h"
+#include "board.h"
+#include "print.h"
 
-//Maximum amount of separate comments
-#define MAX_COMMENT_COUNT 511
-//Maximum length of a singular comment
-#define MAX_COMMENT_LENGTH 511
-#define MAX_VARIATION_DEPTH 7
+void printAbout() {
+    printf("%s VERSION: %s\n\n\n", PGN_READER_ASCII_ART, VERSION);
+}
 
-//Maximum number of moves in PGN
-#define MAX_MOVES 2047
+void clearScreen() {
+    for(int i = 0; i < 128; i++) printf("\n");
+}
 
-#define PLAYER_COUNT 2
-#define SQUARE_COUNT 64
+void tabulate(char** c, int tabAmount) {
+    if(tabAmount == 0) {
+        **c = ' ', ++*c;
+        return;
+    }
+    for(int spaces = 0; spaces < AMOUNT_OF_SPACES_IN_TAB*tabAmount; spaces++, ++*c) **c = ' ';
+}
 
-//Maximum length of a FEN string
-#define MAX_FEN_LENGTH 87
+void printTags(char (*tagContent)[MAX_TAG_VALUE_LENGTH]) {
+    if(tagContent[11][0]) printf(" %s\n", tagContent[11]);
+    if(tagContent[15][0]) {
+        printf(" %s", tagContent[15]);
+        tagContent[16][0] ? printf(" Round: %s\n", tagContent[16]) : printf("\n");
+    }
 
-//Maximum possible length of a move noted in the algebraic notation
-#define MAX_ALGEBRAIC_LENGTH 15
+    if(tagContent[0][0]) {
+        if(tagContent[2][0]) printf(" %s ", tagContent[2]);
+        printf(" %s", tagContent[0]);
+        if(tagContent[1][0]) printf(" (%s)", tagContent[1]);
+    } else printf(" Unknown");
+    printf(" vs ");
+    if(tagContent[5][0]) {
+        if(tagContent[7][0]) printf("%s ", tagContent[7]);
+        printf("%s", tagContent[5]);
+        if(tagContent[6][0]) printf(" (%s)", tagContent[6]);
+    } else printf("Unknown");
+    printf("\n");
 
-#define FILE_COUNT  8
-#define RANK_COUNT  8
+    if(tagContent[12][0]) {
+        printf(" %s -> ", tagContent[12]);
+        if(!strcmp("1-0", tagContent[12])) printf("White won the game\n");
+        else if(!strcmp("0-1", tagContent[12])) printf("Black won the game\n");
+        else if(!strcmp("1/2-1/2", tagContent[12])) printf("The game ended in a draw\n");
+        else printf("Result of the game is unknown\n");
+    }
+}
 
-#define DIAGONAL_COUNT 15
+void printBoard(Board board) {
+    unsigned long long i = (BITFILE_A & BITRANK_8)>>1;
+    int rank = 8, j, k;
+    printf("     a   b   c   d   e   f   g   h\n    -------------------------------\n");
 
-#define PIECE_TYPE_COUNT  6
-#define ALL_DIRECTIONS_COUNT  8
+    // Iterate rank by rank, starting from rank 8
+    while(rank != 0) {
+        printf(" %i |", rank);
+        // For each square in rank
+        for(j = 0; j < 8; j++) {
+            i <<= 1;
+            if(i == 0) i = 1;
 
-#define PAWN_INDEX 0
-#define KNIGHT_INDEX 1
-#define BISHOP_INDEX 2
-#define ROOK_INDEX 3
-#define QUEEN_INDEX 4
-#define KING_INDEX 5
+            for(k = 0; k < PIECE_TYPE_COUNT; k++){
+            if(board.white[k] & i) {
+                printf(" %c ", PIECE_CHARS[k]);
+                break;
+            } else if(board.black[k] & i) {
+                printf(" %c ", PIECE_CHARS[k+6]);
+                break;
+            }
+            }
+            //Piece is not there, the square is empty
+            if(k == 6) printf("   ");
+            printf("|");
+        }
+        printf(" %i\n", rank--);
+        printf("    -------------------------------\n");
+        // Go back to the beginning of the rank i>>=8 and then to the beginning of the rank below i>>=8, so i>>=16 in total
+        i >>= 16;
+    }
+    printf("     a   b   c   d   e   f   g   h\n");
+}
 
-static const char PIECE_CHARS[PIECE_TYPE_COUNT*PLAYER_COUNT] = {
-   'P',
-   'N',
-   'B',
-   'R',
-   'Q',
-   'K',
-   'p',
-   'n',
-   'b',
-   'r',
-   'q',
-   'k',
-};
+void fullMoveString(int* newLinesBeforeMove, int* allNewLines, char* moveString, char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH], Board* positions) {
+    char* i = moveString;
+    int commentIndex = 0, newLineCount = 0, realMoveIndex = 1, depth = 0, moveIndexForDepth[MAX_VARIATION_DEPTH] = {1};
+    for(int moveIndex = 0; rawMoves[moveIndex][0] != '\0'; moveIndex++) {
+        if(rawMoves[moveIndex][0] == '-') {
+            depth--;
+            continue;
+        }
+        if(rawMoves[moveIndex][0] == '+') {
+            depth++, moveIndexForDepth[depth] = moveIndexForDepth[depth-1];
+            continue;
+        }
 
-//Maximum length of a .pgn tag
-#define MAX_TAG_LENGTH 11
-#define TAG_COUNT 20
-#define MAX_TAG_VALUE_LENGTH 127
+        //We have reached a commment
+        if(rawMoves[moveIndex][0] == '0') {
+            *i++ = '\n', newLineCount++;
+            tabulate(&i, depth);
+            *i++ = '#', *i++ = ' ';
+            for(char* j = comments[commentIndex]; *j != '\0'; j++) {
+            *i++ = *j;
+            if(*j == '\n') {
+                tabulate(&i, depth);
+                *i++ = '#', *i++ = ' ', newLineCount++;
+            }
+            }
+            commentIndex++;
+            continue;
+        }
 
-static const char* PGN_TAGS[TAG_COUNT] = {
-   "White",
-   "WhiteElo",
-   "WhiteTitle",
-   "WhiteTeam",
-   "WhiteFideId",
-   "Black",
-   "BlackElo",
-   "BlackTitle",
-   "BLackTeam",
-   "BlackFideId",
-   "TimeControl",
-   "Date",
-   "Result",
-   "Termination",
-   "Site",
-   "Event",
-   "Round",
-   "Board",
-   "Annotator",
-   "FEN",
-};
+        //If we get here, it means we deal with an actual move
+        char charMoveIndex[5];
+        if(moveIndex == 0 || rawMoves[moveIndex-1][0] == '+' || rawMoves[moveIndex-1][0] == '-' || rawMoves[moveIndex-1][0] == '0') {
+            *i++ = '\n', newLineCount++, newLinesBeforeMove[realMoveIndex] = newLineCount;
+            tabulate(&i, depth);
+            sprintf(charMoveIndex, "%i", moveIndexForDepth[depth]);
+            for(char* j = charMoveIndex; *j != '\0'; j++) *i++ = *j;
 
-//Amount of visible lines in console, during a single state
-#define AMOUNT_OF_PRINTED_LINES 30
-#define AMOUNT_OF_SPACES_IN_TAB 5
+            if(!positions[realMoveIndex++].turn) *i++ = '.', *i++ = '.', moveIndexForDepth[depth]++;
+            *i++ = '.', *i++ = ' ', *i++ = SPECIAL_MOVE_HIGHLIGHT_CHAR;
+            for(char *j  = rawMoves[moveIndex]; *j != '\0'; j++) *i++ = *j;
+        } else if(!positions[realMoveIndex].turn) {
+            *i++ = ' ', *i++ = SPECIAL_MOVE_HIGHLIGHT_CHAR, newLinesBeforeMove[realMoveIndex++] = newLineCount;
+            for(char *j  = rawMoves[moveIndex]; *j != '\0'; j++) *i++ = *j;
+        } else {
+            moveIndexForDepth[depth]++, *i++ = '\n', newLineCount++, newLinesBeforeMove[realMoveIndex++] = newLineCount;
+            tabulate(&i, depth);
+            sprintf(charMoveIndex, "%i", moveIndexForDepth[depth]);
+            for(char* j = charMoveIndex; *j != '\0'; j++) *i++ = *j;
+            *i++ = '.', *i++ = ' ', *i++ = SPECIAL_MOVE_HIGHLIGHT_CHAR;
+            for(char *j = rawMoves[moveIndex]; *j != '\0'; j++) *i++ = *j;
+        }
+    }
+    *allNewLines = newLineCount;
+}
 
-#define SPECIAL_MOVE_HIGHLIGH_CHAR 127
+//Print the final string that the user will see in console
+void printMoves(int curMove, int skipNewLines, int allNewLines, char* moveString, Board* positions, char (*tagContent)[MAX_TAG_VALUE_LENGTH]) {
+    clearScreen();
+    printAbout();
+    
+    int count = 0, newLines = 0, realIndex = 0;
+    for(char* c = moveString; *c != '\0'; c++) {
+        if(*c == '\n') newLines++;
+        if(*c == SPECIAL_MOVE_HIGHLIGHT_CHAR) {
+        if(++count == curMove) printf(">>>");
+        continue;
+        }
 
-#endif //#ifndef CONSTS_H_INCLUDED
+        int missedBefore = skipNewLines < AMOUNT_OF_PRINTED_LINES/2 ? AMOUNT_OF_PRINTED_LINES/2 - skipNewLines : 0;
+        int missedAfter = skipNewLines + AMOUNT_OF_PRINTED_LINES/2 > allNewLines ? skipNewLines + AMOUNT_OF_PRINTED_LINES/2 - allNewLines : 0;
+        if(!(skipNewLines-newLines-missedAfter > AMOUNT_OF_PRINTED_LINES/2 || newLines-skipNewLines-missedBefore > AMOUNT_OF_PRINTED_LINES/2)) printf("%c", *c);
+    }
+    printf("\n\n\n");
+    printBoard(positions[curMove]);
+    printTags(tagContent);
+    printf(" Input \"a\" to go back a move, \"d\" to go forward and \"0\" to terminate the program.\n");
+}

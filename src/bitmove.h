@@ -202,86 +202,46 @@
    limitations under the License.
 */
 
-#ifndef BITCONSTS_H_INCLUDED
-#define BITCONSTS_H_INCLUDED
+#ifndef BITMOVE_H_INCLUDED
+#define BITMOVE_H_INCLUDED
 
-#include<stdint.h>
+#include <stdbool.h>
 
 #include "consts.h"
 
-extern const uint64_t WHOLE_BOARD;
+// Structure used for storing moves
+// Here is how a white move Rbxe6 would look
+/*
+    {
+        0,
+        ROOK_INDEX,
+        BITFILE_B,
+        BITFILE_E & BITRANK_6,
+        true,
+        0,
+    }
+*/ 
+struct BitMove {
+    // 0 -> white, 1 -> black
+    bool movingSide;
+    int movedPiece;
+    unsigned long long org;
+    unsigned long long dest;
+    bool capture;
+    // 0 if false, otherwise index of piece promoted to
+    int promotion;
+};
+typedef struct BitMove BitMove;
 
-extern const uint64_t BITFILE_A;
-extern const uint64_t BITFILE_B;
-extern const uint64_t BITFILE_C;
-extern const uint64_t BITFILE_D;
-extern const uint64_t BITFILE_E;
-extern const uint64_t BITFILE_F;
-extern const uint64_t BITFILE_G;
-extern const uint64_t BITFILE_H;
+static const BitMove W_SHORT_CASTLE = (BitMove){0, SHORT_CASTLE_INDEX, 0, 0, 0, 0};
+static const BitMove W_LONG_CASTLE = (BitMove){0, LONG_CASTLE_INDEX, 0, 0, 0, 0};
+static const BitMove B_SHORT_CASTLE = (BitMove){1, SHORT_CASTLE_INDEX, 0, 0, 0, 0};
+static const BitMove B_LONG_CASTLE = (BitMove){1, LONG_CASTLE_INDEX, 0, 0, 0, 0};
 
-extern const uint64_t ALL_BITFILES[FILE_COUNT];
+BitMove translateAlgebraic(char* algebraicMove, bool movingSide);
+unsigned long long filterCandidates(unsigned long long cand, unsigned long long king, BitMove *bitMove, Board *board);
+unsigned long long extractOrigin(BitMove bitMove, Board board);
+unsigned long long expandBetweenMask(unsigned long long piece, unsigned long long king, bool *pinRayType);
+Board applyBitMove(BitMove bitMove, Board board);
 
-extern const uint64_t BITFILES_TO[FILE_COUNT];
-
-extern const uint64_t BITRANK_1;
-extern const uint64_t BITRANK_2;
-extern const uint64_t BITRANK_3;
-extern const uint64_t BITRANK_4;
-extern const uint64_t BITRANK_5;
-extern const uint64_t BITRANK_6;
-extern const uint64_t BITRANK_7;
-extern const uint64_t BITRANK_8;
-
-extern const uint64_t ALL_BITRANKS[RANK_COUNT];
-
-extern const uint64_t BITRANKS_TO[RANK_COUNT];
-
-extern const uint64_t R_BITDIAG_1;
-extern const uint64_t R_BITDIAG_2;
-extern const uint64_t R_BITDIAG_3;
-extern const uint64_t R_BITDIAG_4;
-extern const uint64_t R_BITDIAG_5;
-extern const uint64_t R_BITDIAG_6;
-extern const uint64_t R_BITDIAG_7;
-extern const uint64_t R_BITDIAG_8;
-extern const uint64_t R_BITDIAG_9;
-extern const uint64_t R_BITDIAG_10;
-extern const uint64_t R_BITDIAG_11;
-extern const uint64_t R_BITDIAG_12;
-extern const uint64_t R_BITDIAG_13;
-extern const uint64_t R_BITDIAG_14;
-extern const uint64_t R_BITDIAG_15;
-
-extern const uint64_t ALL_R_DIAG[DIAGONAL_COUNT];
-
-extern const uint64_t L_BITDIAG_1;
-extern const uint64_t L_BITDIAG_2;
-extern const uint64_t L_BITDIAG_3;
-extern const uint64_t L_BITDIAG_4;
-extern const uint64_t L_BITDIAG_5;
-extern const uint64_t L_BITDIAG_6;
-extern const uint64_t L_BITDIAG_7;
-extern const uint64_t L_BITDIAG_8;
-extern const uint64_t L_BITDIAG_9;
-extern const uint64_t L_BITDIAG_10;
-extern const uint64_t L_BITDIAG_11;
-extern const uint64_t L_BITDIAG_12;
-extern const uint64_t L_BITDIAG_13;
-extern const uint64_t L_BITDIAG_14;
-extern const uint64_t L_BITDIAG_15;
-
-extern const uint64_t ALL_L_DIAG[DIAGONAL_COUNT];
-
-extern const uint64_t BETWEEN_MASK[SQUARE_COUNT + 1][SQUARE_COUNT + 1];
-
-extern const uint64_t WHITE_PAWN_ATTACK_MASK[SQUARE_COUNT];
-
-extern const uint64_t BLACK_PAWN_ATTACK_MASK[SQUARE_COUNT];
-
-extern const uint64_t KNIGHT_ATTACK_MASK[SQUARE_COUNT];
-extern const uint64_t BISHOP_ATTACK_MASK[SQUARE_COUNT];
-extern const uint64_t ROOK_ATTACK_MASK[SQUARE_COUNT];
-extern const uint64_t KING_ATTACK_MASK[SQUARE_COUNT];
-
-#endif //#ifndef BITCONSTS_H_INCLUDED
+#endif // #ifndef BITMOVE_H_INCLUDED
