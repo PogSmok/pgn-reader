@@ -33,7 +33,7 @@ PGN Reader is a user-friendly and efficient application that allows you to read 
   <br>
   NOTE: you have to compile all .c files, not only main.c
   ```
-    gcc -o pgn-reader *.c
+    gcc -o pgn-reader ./src/*.c
   ```
   After the program is compiled, view .pgn file as follows
   ```
