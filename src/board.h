@@ -202,8 +202,7 @@
    limitations under the License.
 */
 
-#ifndef BOARD_H_INCLUDED
-#define BOARD_H_INCLUDED
+#pragma once
 
 #include <stdbool.h>
 
@@ -264,5 +263,3 @@ bool isBoardNull(Board board);
 unsigned long long allPieces(Board board);
 int bitSquareToIndex(unsigned long long bitSquare);
 Board fenToBoard(char* fen);
-
-#endif //#ifndef BOARD_H_INCLUDED

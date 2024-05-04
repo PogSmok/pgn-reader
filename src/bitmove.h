@@ -202,8 +202,7 @@
    limitations under the License.
 */
 
-#ifndef BITMOVE_H_INCLUDED
-#define BITMOVE_H_INCLUDED
+#pragma once
 
 #include <stdbool.h>
 
@@ -243,5 +242,3 @@ unsigned long long filterCandidates(unsigned long long cand, unsigned long long 
 unsigned long long extractOrigin(BitMove bitMove, Board board);
 unsigned long long expandBetweenMask(unsigned long long piece, unsigned long long king, bool *pinRayType);
 Board applyBitMove(BitMove bitMove, Board board);
-
-#endif // #ifndef BITMOVE_H_INCLUDED

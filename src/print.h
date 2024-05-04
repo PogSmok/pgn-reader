@@ -202,8 +202,7 @@
    limitations under the License.
 */
 
-#ifndef PRINT_H_INCLUDED
-#define PRINT_H_INCLUDED
+#pragma once
 
 #include "consts.h"
 #include "board.h"
@@ -219,5 +218,3 @@ void fullMoveString(
                     Board* positions
                 );
 void printMoves(int curMove, int skipNewLines, int allNewLines, char* moveString, Board* positions, char (*tagContent)[MAX_TAG_VALUE_LENGTH]);
-
-#endif //#ifndef PRINT_H_INCLUDED

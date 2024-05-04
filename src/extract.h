@@ -202,8 +202,7 @@
    limitations under the License.
 */
 
-#ifndef EXTRACT_H_INCLUDED
-#define EXTRACT_H_INCLUDED
+#pragma once
 
 #include "consts.h"
 #include "board.h"
@@ -213,5 +212,3 @@ char* extractTags(char* path, char* pgnContent, char  (*tagContent)[MAX_TAG_VALU
 void extractMoves(char* moves, char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH]);
 void fillPositions(char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], Board* positions, Board startingPosition);
 void extractAll(char* path, char* pgnContent, char (*tagContent)[MAX_TAG_VALUE_LENGTH], char (*rawMoves)[MAX_ALGEBRAIC_LENGTH], char (*comments)[MAX_COMMENT_LENGTH], Board* positions);
-
-#endif // #ifndef EXTRACT_H_INCLUDED

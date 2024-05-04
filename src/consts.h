@@ -202,8 +202,7 @@
    limitations under the License.
 */
 
-#ifndef CONSTS_H_INCLUDED
-#define CONSTS_H_INCLUDED
+#pragma once
 
 /*
     ____   ____ _   _    ____  _____    _    ____  _____ ____ 
@@ -299,5 +298,3 @@ static const char* PGN_TAGS[TAG_COUNT] = {
 #define AMOUNT_OF_PRINTED_LINES 30
 // Moves are prefixed with this char, to extract them easily
 #define SPECIAL_MOVE_HIGHLIGHT_CHAR 127
-
-#endif // #ifndef CONSTS_H_INCLUDED
