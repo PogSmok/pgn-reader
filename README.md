@@ -38,7 +38,7 @@ PGN Reader is a user-friendly and efficient application that allows you to read 
   After the program is compiled, view .pgn file as follows
   ```
     <executable> <path to .pgn file>
-    pgn-reader ./example.pgn
+    ./pgn-reader ./example.pgn
   ```
 ## FAQ
   #### Q: What is a `.pgn` file?
